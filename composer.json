@@ -1,0 +1,31 @@
+{
+  "name": "chessterrdev/ozonrocket-sdk",
+  "description": "Client for interactive with Ozon Rocket API (1.0.0)",
+  "keywords": ["ozon", "logistics", "delivery", "api", "rocket"],
+  "license": "MIT",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Roman",
+      "email": "chess.terr.dev@yandex.ru",
+      "homepage": "https://github.com/ChessTerrDev"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "guzzlehttp/guzzle": ">=6.5",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "OzonRocketSDK\\": "src/",
+      "OzonRocketSDK\\Config\\": "config/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "OzonRocketSDK\\Tests\\": "tests/",
+      "OzonRocketSDK\\Examples\\": "examples/"
+    }
+  }
+}
