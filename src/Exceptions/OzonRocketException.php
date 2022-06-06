@@ -2,9 +2,10 @@
 
 namespace OzonRocketSDK;
 
+use Exception;
 use OzonRocketSDK\Constants;
 
-class OzonRocketException extends \Exception
+class OzonRocketException extends Exception
 {
     public static function getTranslation($code, $message)
     {

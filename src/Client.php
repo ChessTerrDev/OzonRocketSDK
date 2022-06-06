@@ -2,8 +2,10 @@
 
 namespace OzonRocketSDK;
 
+use Exception;
 use GuzzleHttp\Client as GuzzleClient;
 use \OzonRocketSDK\{AuthException,OzonRocketException,RequestException};
+use InvalidArgumentException;
 
 final class Client
 {
@@ -179,7 +181,7 @@ final class Client
 
             return true;
         }
-        throw new \Exception(Constants::AUTH_FAIL);
+        throw new Exception(Constants::AUTH_FAIL);
     }
 
     private function checkSavedToken()
@@ -228,7 +230,7 @@ final class Client
     private function getToken(): string
     {
         if (empty($this->token)) {
-            throw new \InvalidArgumentException('Не передан API-токен!');
+            throw new InvalidArgumentException('Не передан API-токен!');
         }
 
         return $this->token;
@@ -245,22 +247,22 @@ final class Client
     private function checkErrors($method, $response, $apiResponse): bool
     {
         if (empty($apiResponse)) {
-            throw new \Exception('От API OZON при вызове метода '.$method.' пришел пустой ответ', $response->getStatusCode());
+            throw new Exception('От API OZON при вызове метода '.$method.' пришел пустой ответ', $response->getStatusCode());
         }
         if (
             $response->getStatusCode() > 202 && isset($apiResponse['requests'][0]['errors'])
             || isset($apiResponse['requests'][0]['state']) && $apiResponse['requests'][0]['state'] == 'INVALID'
         ) {
-            throw new \Exception('От API OZON при вызове метода '.$method.' получена ошибка: ', $response->getStatusCode());
+            throw new Exception('От API OZON при вызове метода '.$method.' получена ошибка: ', $response->getStatusCode());
         }
         if (
             $response->getStatusCode() == 200 && isset($apiResponse['errors'])
             || isset($apiResponse['state']) && $apiResponse['state'] == 'INVALID' || $response->getStatusCode() !== 200 && isset($apiResponse['errors'])
         ) {
-            throw new \Exception('От API OZON при вызове метода '.$method.' получена ошибка: ', $response->getStatusCode());
+            throw new Exception('От API OZON при вызове метода '.$method.' получена ошибка: ', $response->getStatusCode());
         }
         if ($response->getStatusCode() > 202 && ! isset($apiResponse['requests'][0]['errors'])) {
-            throw new \Exception('Неверный код ответа от сервера OZON при вызове метода 
+            throw new Exception('Неверный код ответа от сервера OZON при вызове метода 
              '.$method.': '.$response->getStatusCode(), $response->getStatusCode());
         }
 
@@ -268,14 +270,19 @@ final class Client
     }
 
 
-
-    public function getRegions()
+    /**
+     * @return array
+     */
+    public function getTariffList(): array
     {
-        $resp = [];
         $response = $this->apiRequest('GET', $this->base_url.Constants::TARIFF_LIST_URL, []);
         var_dump($response);
+        /*$resp = [];
+        foreach ($response['items'] as $key => $value) {
+            $resp[] = new Tariff\TariffList($value);
+        }
 
-        return $resp;
+        return $resp;*/
     }
 
 }
