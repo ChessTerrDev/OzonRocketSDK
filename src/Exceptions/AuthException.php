@@ -2,7 +2,7 @@
 
 namespace OzonRocketSDK;
 
-class AuthException
+class AuthException extends OzonRocketException
 {
 
 }

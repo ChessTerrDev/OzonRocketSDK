@@ -2,7 +2,7 @@
 
 namespace OzonRocketSDK;
 
-class RequestException
+class RequestException extends OzonRocketException
 {
 
 }
