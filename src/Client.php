@@ -4,7 +4,8 @@ namespace OzonRocketSDK;
 
 use Exception;
 use GuzzleHttp\Client as GuzzleClient;
-use \OzonRocketSDK\{AuthException,OzonRocketException,RequestException};
+use \OzonRocketSDK\{AuthException, OzonRocketException, RequestException};
+use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
 
 final class Client
@@ -99,11 +100,13 @@ final class Client
 
     /**
      * Выполняет вызов к API.
+     * @throws Exception
+     * @throws GuzzleException
      */
     private function apiRequest(string $type, string $uri, $params = null)
     {
         // Авторизуемся или получаем данные из кэша\сессии
-        if ($this->checkSavedToken() == false) {
+        if (!$this->checkSavedToken()) {
             $this->authorize();
         }
 
@@ -116,9 +119,9 @@ final class Client
             $headers['Accept'] = 'application/json';
         }
 
-        $headers['authorization'] = 'Bearer '.$this->token;
+        $headers['authorization'] = 'Bearer ' . $this->token;
 
-        if ( ! empty($params) && is_object($params)) {
+        if (!empty($params) && is_object($params)) {
             $params = $params->prepareRequest();
         }
 
@@ -152,6 +155,10 @@ final class Client
         return $apiResponse;
     }
 
+    /**
+     * @return bool
+     * @throws GuzzleException
+     */
     private function authorize(): bool
     {
         $param = [
@@ -173,7 +180,7 @@ final class Client
             $token_info = json_decode($response->getBody());
             $this->token = $token_info->access_token ?? '';
             $this->expire = $token_info->expires_in ?? 0;
-            $this->expire = (int) (time() + $this->expire - 10);
+            $this->expire = (int)(time() + $this->expire - 10);
 
             if (!empty($this->memory_save_fu)) {
                 $this->saveToken($this->memory_save_fu);
@@ -184,22 +191,25 @@ final class Client
         throw new Exception(Constants::AUTH_FAIL);
     }
 
+    /**
+     * @return $this|false
+     */
     private function checkSavedToken()
     {
         $check_memory = $this->getMemory();
 
         // Если не передан верный сохраненный массив данных для авторизации, функция возвратит false
-        if ( ! isset($check_memory['account_type'])
+        if (!isset($check_memory['account_type'])
             || empty($check_memory)
-            || ! isset($check_memory['expires_in'])
-            || ! isset($check_memory['access_token'])) {
+            || !isset($check_memory['expires_in'])
+            || !isset($check_memory['access_token'])) {
             return false;
         }
 
         // Если не передан верный сохраненный массив данных для авторизации,
         // но тип аккаунта не тот, который был при прошлой сохраненной авторизации - функция возвратит false
-        if (isset($check_memory['account_type']) && $check_memory['account_type'] !== $this->account_type) {
-           return false;
+        if ($check_memory['account_type'] !== $this->account_type) {
+            return false;
         }
 
         return ($check_memory['expires_in'] > time() && !empty($check_memory['access_token']))
@@ -207,26 +217,39 @@ final class Client
             : false;
     }
 
+    /**
+     * @param callable $fu
+     * @return mixed
+     */
     private function saveToken(callable $fu)
     {
         return $fu(['ozonAuth' => [
             'access_token' => $this->token,
-            'account_type' => $this->account_type, ]]);
+            'account_type' => $this->account_type,]]);
     }
 
-    public function setMemory(?array $memory, callable $fu)
+    /**
+     * @param array|null $memory
+     * @param callable $fu
+     * @return void
+     */
+    public function setMemory(?array $memory, callable $fu): void
     {
         $this->memory = $memory;
         $this->memory_save_fu = $fu;
-
-        return $this;
     }
 
-    private function getMemory()
+    /**
+     * @return array
+     */
+    private function getMemory(): array
     {
         return $this->memory;
     }
 
+    /**
+     * @return string
+     */
     private function getToken(): string
     {
         if (empty($this->token)) {
@@ -236,6 +259,10 @@ final class Client
         return $this->token;
     }
 
+    /**
+     * @param string $token
+     * @return $this
+     */
     private function setToken(string $token)
     {
         $this->token = $token;
@@ -244,26 +271,33 @@ final class Client
     }
 
 
+    /**
+     * @param $method
+     * @param $response
+     * @param $apiResponse
+     * @return bool
+     * @throws Exception
+     */
     private function checkErrors($method, $response, $apiResponse): bool
     {
         if (empty($apiResponse)) {
-            throw new Exception('От API OZON при вызове метода '.$method.' пришел пустой ответ', $response->getStatusCode());
+            throw new Exception('От API OZON при вызове метода ' . $method . ' пришел пустой ответ', $response->getStatusCode());
         }
         if (
             $response->getStatusCode() > 202 && isset($apiResponse['requests'][0]['errors'])
             || isset($apiResponse['requests'][0]['state']) && $apiResponse['requests'][0]['state'] == 'INVALID'
         ) {
-            throw new Exception('От API OZON при вызове метода '.$method.' получена ошибка: ', $response->getStatusCode());
+            throw new Exception('От API OZON при вызове метода ' . $method . ' получена ошибка: ', $response->getStatusCode());
         }
         if (
             $response->getStatusCode() == 200 && isset($apiResponse['errors'])
             || isset($apiResponse['state']) && $apiResponse['state'] == 'INVALID' || $response->getStatusCode() !== 200 && isset($apiResponse['errors'])
         ) {
-            throw new Exception('От API OZON при вызове метода '.$method.' получена ошибка: ', $response->getStatusCode());
+            throw new Exception('От API OZON при вызове метода ' . $method . ' получена ошибка: ', $response->getStatusCode());
         }
-        if ($response->getStatusCode() > 202 && ! isset($apiResponse['requests'][0]['errors'])) {
+        if ($response->getStatusCode() > 202 && !isset($apiResponse['requests'][0]['errors'])) {
             throw new Exception('Неверный код ответа от сервера OZON при вызове метода 
-             '.$method.': '.$response->getStatusCode(), $response->getStatusCode());
+             ' . $method . ': ' . $response->getStatusCode(), $response->getStatusCode());
         }
 
         return false;
@@ -271,18 +305,21 @@ final class Client
 
 
     /**
+     * Метод возвращает полный список всех тарифов в системе OZON
      * @return array
+     * @throws GuzzleException
      */
     public function getTariffList(): array
     {
-        $response = $this->apiRequest('GET', $this->base_url.Constants::TARIFF_LIST_URL, []);
-        var_dump($response);
-        /*$resp = [];
+        $response = $this->apiRequest('GET', $this->base_url . Constants::TARIFF_LIST_URL, []);
+        $resp = [];
         foreach ($response['items'] as $key => $value) {
             $resp[] = new Tariff\TariffList($value);
         }
 
-        return $resp;*/
+        return $resp;
     }
+
+
 
 }
