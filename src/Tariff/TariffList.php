@@ -59,9 +59,9 @@ class TariffList
 
     /**
      * Наименование типа тарифа.
-     * @var int
+     * @var string
      */
-    private int $tariffRateTypeName;
+    private string $tariffRateTypeName;
 
     /**
      * Идентификатор склада места передачи отправлений.
@@ -71,9 +71,9 @@ class TariffList
 
     /**
      * Наименование склада места передачи отправлений.
-     * @var int
+     * @var string
      */
-    private int $placeName;
+    private string $placeName;
 
     /**
      * Базовый тариф.
@@ -100,7 +100,7 @@ class TariffList
             foreach ($properties as $key => $value) {
                 if (!property_exists($this, $key)) continue;
 
-                $this->{$key} = $value;
+                if ($value) $this->{$key} = $value;
             }
         }
         return $this;
@@ -174,9 +174,9 @@ class TariffList
 
     /**
      * Наименование типа тарифа.
-     * @return int
+     * @return string
      */
-    public function getTariffRateTypeName(): int
+    public function getTariffRateTypeName(): string
     {
         return $this->tariffRateTypeName;
     }
@@ -192,9 +192,9 @@ class TariffList
 
     /**
      * Наименование склада места передачи отправлений.
-     * @return int
+     * @return string
      */
-    public function getPlaceName(): int
+    public function getPlaceName(): string
     {
         return $this->placeName;
     }
