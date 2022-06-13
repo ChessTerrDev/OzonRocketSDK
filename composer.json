@@ -16,6 +16,9 @@
     "guzzlehttp/guzzle": ">=7.0",
     "ext-json": "*"
   },
+  "require-dev": {
+    "phpunit/phpunit": ">=9.5.0"
+  },
   "autoload": {
     "psr-4": {
       "OzonRocketSDK\\": "src/"

@@ -96,7 +96,7 @@ class GuzzleAdapter
             'Content-Type' => 'application/json',
             'authorization' => 'Bearer ' . $this->token
         ]);
-        //var_dump(json_encode($param));
+
         $response = $this->http->post($this->url, ['headers' => $this->headers, 'json' => $param]);
 
         $apiResponse = json_decode($response->getBody()->getContents(), true);
