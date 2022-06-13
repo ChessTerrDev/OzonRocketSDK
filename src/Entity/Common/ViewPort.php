@@ -8,12 +8,15 @@ class ViewPort extends AbstractEntity
 {
     protected \OzonRocketSDK\Entity\Common\GeoCoordinates $rightTop;
     protected \OzonRocketSDK\Entity\Common\GeoCoordinates $leftBottom;
+    protected int $zoom;
+
 
     /**
-     * @param \OzonRocketSDK\Entity\Common\GeoCoordinates $rightTop = Долгота и Широта
-     * @param \OzonRocketSDK\Entity\Common\GeoCoordinates $leftBottom = Долгота и Широта
+     * @param \OzonRocketSDK\Entity\Common\GeoCoordinates $rightTop Долгота и Широта
+     * @param \OzonRocketSDK\Entity\Common\GeoCoordinates $leftBottom Долгота и Широта
+     * @param int $zoom Коэффициент масштабирования
      */
-    public function __construct(GeoCoordinates $rightTop, GeoCoordinates $leftBottom)
+    public function __construct(GeoCoordinates $rightTop, GeoCoordinates $leftBottom, int $zoom)
     {
         $this->rightTop = $rightTop;
         $this->leftBottom = $leftBottom;
@@ -52,6 +55,24 @@ class ViewPort extends AbstractEntity
     public function setLeftBottom(GeoCoordinates $leftBottom): ViewPort
     {
         $this->leftBottom = $leftBottom;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getZoom(): int
+    {
+        return $this->zoom;
+    }
+
+    /**
+     * @param int $zoom
+     * @return ViewPort
+     */
+    public function setZoom(int $zoom): ViewPort
+    {
+        $this->zoom = $zoom;
         return $this;
     }
 }

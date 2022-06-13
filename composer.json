@@ -13,13 +13,12 @@
   ],
   "require": {
     "php": ">=7.4",
-    "guzzlehttp/guzzle": ">=6.5",
+    "guzzlehttp/guzzle": ">=7.0",
     "ext-json": "*"
   },
   "autoload": {
     "psr-4": {
-      "OzonRocketSDK\\": "src/",
-      "OzonRocketSDK\\Config\\": "config/"
+      "OzonRocketSDK\\": "src/"
     }
   },
   "autoload-dev": {
