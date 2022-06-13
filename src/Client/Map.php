@@ -48,7 +48,7 @@ class Map
             'tokenGenerate' => [
                 'API' => 'https://xapi.ozon.ru/principal-auth-api/connect/token',
                 'TEST' => 'https://api-stg.ozonru.me/principal-auth-api/connect/token',
-                'REQUEST_TYPE' => 'POST'
+                'REQUEST_TYPE' => 'FORM'
             ],
 
             # Delivery
@@ -58,6 +58,11 @@ class Map
                 'REQUEST_TYPE' => 'GET',
             ],
             'deliveryCities' => [
+                'API' => $api.'/delivery/cities/extended',
+                'TEST' => $test.'/delivery/cities/extended',
+                'REQUEST_TYPE' => 'GET',
+            ],
+            'deliveryCitiesExtended' => [
                 'API' => $api.'/delivery/cities',
                 'TEST' => $test.'/delivery/cities',
                 'REQUEST_TYPE' => 'GET',
@@ -66,6 +71,11 @@ class Map
                 'API' => $api.'/delivery/calculate',
                 'TEST' => $test.'/delivery/calculate',
                 'REQUEST_TYPE' => 'GET',
+            ],
+            'deliveryCalculateMaterialWeight' => [
+                'API' => $api.'/delivery/calculate/materialWeight',
+                'TEST' => $test.'/delivery/calculate/materialWeight',
+                'REQUEST_TYPE' => 'POST',
             ],
             'deliveryCalculatePost' => [
                 'API' => $api.'/delivery/calculate',
@@ -80,6 +90,11 @@ class Map
             'deliveryFromPlaces' => [
                 'API' => $api.'/delivery/from_places',
                 'TEST' => $test.'/delivery/from_places',
+                'REQUEST_TYPE' => 'GET',
+            ],
+            'deliveryReturnPlaces' => [
+                'API' => $api.'/delivery/return_places',
+                'TEST' => $test.'/delivery/return_places',
                 'REQUEST_TYPE' => 'GET',
             ],
             'deliveryVariantsByAddress' => [
@@ -329,11 +344,15 @@ class Map
         ];
 
         // method not null
-        if ($method && isset($arMap[$method]))
-            return $getREQUEST_TYPE ? [
+        if ($method) {
+            if (isset($arMap[$method])) {
+                return $getREQUEST_TYPE ? [
                     'URL' => $arMap[$method][$this->mode],
                     'REQUEST_TYPE' => $arMap[$method]['REQUEST_TYPE']
                 ] : $arMap[$method][$this->mode];
+            } else return false;
+        }
+
 
         $arReturn = [];
         foreach($arMap as $method => $arData)

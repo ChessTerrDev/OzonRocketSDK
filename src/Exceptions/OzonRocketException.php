@@ -1,18 +1,31 @@
 <?php
 
-namespace OzonRocketSDK;
+namespace OzonRocketSDK\Exceptions;
 
 use Exception;
-use OzonRocketSDK\Constants;
 
 class OzonRocketException extends Exception
 {
-    public static function getTranslation($code, $message)
+    /**
+     * @param $method
+     * @param $arErrorRequest
+     * @return string
+     */
+    public static function getErrorMessage($method, $arErrorRequest): string
     {
-        /*if (array_key_exists($code, Constants::ERRORS)) {
-            return Constants::ERRORS[$code].'. '.$message;
-        }*/
+
+        if (empty($arErrorRequest)) return 'От API OZON при вызове метода ' . $method . ' пришел пустой ответ';
+
+        $message = $arErrorRequest['errorCode'] . ".\n От API OZON при вызове метода " . $method .
+            ' получена ошибка: ' . $arErrorRequest['errorCode'];
+
+        if (isset($arErrorRequest['arguments'])) $message .= ".\n Error Arguments: " .
+            implode("&",array_map(function($a) {return implode("~",$a);}, $arErrorRequest['arguments']));
+
+        if (isset($arErrorRequest['extensions'])) $message .= ".\n Extensions: ".
+            implode("&",array_map(function($a) {return implode("~",$a);}, $arErrorRequest['extensions']));
 
         return $message;
     }
+
 }

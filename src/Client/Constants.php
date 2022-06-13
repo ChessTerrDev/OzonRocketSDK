@@ -1,6 +1,6 @@
 <?php
 
-namespace OzonRocketSDK;
+namespace OzonRocketSDK\Client;
 
 
 class Constants

@@ -1,13 +1,30 @@
 <?php
+declare(strict_types=1);
 
 namespace OzonRocketSDK\Client;
 
 use Exception;
+use OzonRocketSDK\Methods\{
+    DeliveryCities,
+    TokenGenerate,
+    TariffList,
+    DeliveryCitiesExtended,
+    DeliveryVariants,
+    DeliveryVariantsByAddress,
+    DeliveryVariantsByViewport,
+    DeliveryVariantsByIds,
+    DeliveryVariantsByAddressShort,
+    DeliveryCalculate,
+    DeliveryCalculateMaterialWeight,
+    DeliveryCalculateInformation,
+    DeliveryFromPlaces,
+    DeliveryReturnPlaces,
+    DeliveryTime,
+    DeliveryPickupPlaces
+
+};
+use OzonRocketSDK\Adapter\GuzzleAdapter;
 use GuzzleHttp\Client as GuzzleClient;
-use OzonRocketSDK\{AuthException, OzonRocketException, RequestException};
-use OzonRocketSDK\Client\{Map, Autorization};
-use OzonRocketSDK\Tariff\TariffList;
-use OzonRocketSDK\Constants;
 use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
 
@@ -28,6 +45,8 @@ final class Client
     /** @var \OzonRocketSDK\Client\Map */
     private \OzonRocketSDK\Client\Map $map;
 
+    protected GuzzleAdapter $guzzleAdapter;
+
 
     /**
      * @param string $account - Логин Account в сервисе Интеграции
@@ -37,137 +56,264 @@ final class Client
      */
     public function __construct(string $account, ?string $secure = null, ?float $timeout = 5.0)
     {
-        // Получает token
-        $this->token = (new Autorization(
-            $account,
-            $secure,
-            $timeout)
-        )->getToken();
+        // Инициализируем карту URI API
+        $this->map = new Map();
+        if ($account == 'TEST') $this->map = new Map('TEST');
+
+        $this->guzzleAdapter = new GuzzleAdapter($timeout);
+
+        // Авторизуемся / получаем Token
+        $this->tokenGenerate($account, $secure);//(new Autorization($account, $secure, $timeout))->getToken();
         if (empty($this->token))
             throw new InvalidArgumentException('Не передан API-токен!');
 
-
-        if ($account == 'TEST') {
-            $this->map = new Map('TEST');
-            $this->http = new GuzzleClient([
-                'base_uri' => $this->map->getBaseURL(),
-                'timeout' => $timeout,
-                'http_errors' => false,
-            ]);
-        } else {
-            $this->map = new Map();
-            $this->http = new GuzzleClient([
-                'base_uri' => $this->map->getBaseURL(),
-                'timeout' => $timeout,
-                'http_errors' => false,
-            ]);
-        }
+        // Ставим токен в gizzle
+        $this->guzzleAdapter->setToken($this->token);
     }
 
 
     /**
-     * Выполняет вызов к API.
+     * @param string $method имя метода в api
      * @throws Exception
-     * @throws GuzzleException
      */
-    private function apiRequest(string $type, string $uri, $params = null)
+    private function configureRequest(string $method): void
     {
-
-        // Проверяем является ли запрос на файл pdf
-        $is_pdf_file_request = strpos($uri, '.pdf');
-
-        if ($is_pdf_file_request !== false) {
-            $headers['Accept'] = 'application/pdf';
-        } else {
-            $headers['Accept'] = 'application/json';
+        if($ar = $this->map->getMap($method, true))
+        {
+            $this->guzzleAdapter->setUrl($ar['URL']);
+            $this->guzzleAdapter->setRequestType($ar['REQUEST_TYPE']);
+            $this->guzzleAdapter->setMethod($method);
         }
-
-        $headers['authorization'] = 'Bearer ' . $this->token;
-
-        if (!empty($params) && is_object($params)) {
-            $params = $params->prepareRequest();
-        }
-
-        switch ($type) {
-            case 'GET':
-                $response = $this->http->get($uri, ['query' => $params, 'headers' => $headers]);
-                break;
-            case 'DELETE':
-                $response = $this->http->delete($uri, ['headers' => $headers]);
-                break;
-            case 'POST':
-                $response = $this->http->post($uri, ['json' => $params, 'headers' => $headers]);
-                break;
-            case 'PATCH':
-                $response = $this->http->patch($uri, ['json' => $params, 'headers' => $headers]);
-                break;
-        }
-        // Если запрос на файл pdf был успешным сразу отправляем его в ответ
-        if ($is_pdf_file_request) {
-            if ($response->getStatusCode() == 200) {
-                if (strpos($response->getHeader('Content-Type')[0], 'application/pdf') !== false) {
-                    return $response->getBody();
-                }
-            }
-        }
-        $json = $response->getBody()->getContents();
-        $apiResponse = json_decode($json, true);
-
-        $this->checkErrors($uri, $response, $apiResponse);
-
-        return $apiResponse;
+        else
+            throw new \Exception('Запрошенный метод "'.$method.'" не найден в карте модуля!');
     }
-
 
 
     /**
-     * @param $method
-     * @param $response
-     * @param $apiResponse
-     * @return bool
+     * @param $account
+     * @param $secure
+     * @return void
      * @throws Exception
      */
-    private function checkErrors($method, $response, $apiResponse): bool
+    public function tokenGenerate($account, $secure): void
     {
-        if (empty($apiResponse)) {
-            throw new Exception('От API OZON при вызове метода ' . $method . ' пришел пустой ответ', $response->getStatusCode());
-        }
-        if (
-            $response->getStatusCode() > 202 && isset($apiResponse['requests'][0]['errors'])
-            || isset($apiResponse['requests'][0]['state']) && $apiResponse['requests'][0]['state'] == 'INVALID'
-        ) {
-            throw new Exception('От API OZON при вызове метода ' . $method . ' получена ошибка: ', $response->getStatusCode());
-        }
-        if (
-            $response->getStatusCode() == 200 && isset($apiResponse['errors'])
-            || isset($apiResponse['state']) && $apiResponse['state'] == 'INVALID' || $response->getStatusCode() !== 200 && isset($apiResponse['errors'])
-        ) {
-            throw new Exception('От API OZON при вызове метода ' . $method . ' получена ошибка: ', $response->getStatusCode());
-        }
-        if ($response->getStatusCode() > 202 && !isset($apiResponse['requests'][0]['errors'])) {
-            throw new Exception('Неверный код ответа от сервера OZON при вызове метода 
-             ' . $method . ': ' . $response->getStatusCode(), $response->getStatusCode());
-        }
-
-        return false;
+        $this->configureRequest(__FUNCTION__);
+        $tokenGenerate = new TokenGenerate($account, $secure, $this->guzzleAdapter);
+        $this->token = $tokenGenerate->getToken();
     }
+
+    /*--------------------------------------------------------------------------------------------------------------*/
+    /*-----------------Deliveries-----------------------------------------------------------------------------------*/
+    /*--------------------------------------------------------------------------------------------------------------*/
+    /**
+     * @param \OzonRocketSDK\Entity\Request\DeliveryVariants $data
+     * @return mixed|void
+     * @throws \Exception
+     */
+    public function deliveryVariants(\OzonRocketSDK\Entity\Request\DeliveryVariants $data)
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryVariants($data, $this->guzzleAdapter))->request();
+    }
+
+
+    /**
+     * Получить способы доставки по адресу
+     * @param \OzonRocketSDK\Entity\Request\DeliveryVariantsByAddress $data
+     * @return mixed|void
+     * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function deliveryVariantsByAddress(\OzonRocketSDK\Entity\Request\DeliveryVariantsByAddress $data)
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryVariantsByAddress($data, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получить способы доставки по viewport
+     * Рекомендуем использовать метод для интегрирования виджета карты на сайт.
+     * @param \OzonRocketSDK\Entity\Request\DeliveryVariantsByViewport $data
+     * @return false|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryVariantsByViewport(\OzonRocketSDK\Entity\Request\DeliveryVariantsByViewport $data)
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryVariantsByViewport($data, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получить способы доставки по идентификаторам
+     * Метод для получения списка способов доставки по идентификаторам способов доставки.
+     * @param \OzonRocketSDK\Entity\Request\DeliveryVariantsByIds | array $data = Идентификаторы способов доставки.
+     * Значение id из ответа deliveryVariants()
+     * @return false|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryVariantsByIds($data)
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryVariantsByIds($data, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * @param \OzonRocketSDK\Entity\Request\DeliveryVariantsByAddressShort $data
+     * @return false|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryVariantsByAddressShort(\OzonRocketSDK\Entity\Request\DeliveryVariantsByAddressShort $data)
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryVariantsByAddressShort($data, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получение списка городов, в которые есть возможность доставлять
+     * @return array
+     * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function deliveryCities(): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryCities($this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получение расширенного списка городов, в которых принципалу доступны способы доставки.
+     * @param $deliveryTypes = Способы доставки:
+         * ExpressCourier - Express доставка курьером;
+         * Courier — доставка курьером;
+         * PickPoint — самовывоз;
+         * Postamat — постамат.
+     * @return array
+     * @throws \Exception
+     */
+    public function deliveryCitiesExtended(array $deliveryTypes): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryCitiesExtended($deliveryTypes, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Рассчитать стоимости доставки
+     * @param \OzonRocketSDK\Entity\Request\DeliveryCalculate $deliveryCalculate
+     * @return false|mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryCalculate(\OzonRocketSDK\Entity\Request\DeliveryCalculate $deliveryCalculate): float
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryCalculate($deliveryCalculate, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Рассчитать объёмный вес
+     * @param array $packages [\OzonRocketSDK\Entity\Common\Package]
+     * @return array = 'volumeWeight' => float 200000
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryCalculateMaterialWeight(array $packages): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryCalculateMaterialWeight($packages, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Рассчитать стоимость и срок доставки по адресу
+     * @param \OzonRocketSDK\Entity\Request\DeliveryCalculateInformation $data
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryCalculateInformation(\OzonRocketSDK\Entity\Request\DeliveryCalculateInformation $data): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryCalculateInformation($data, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получить место передачи отправлений DropOff на склад
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryFromPlaces(): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryFromPlaces($this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получить информацию о складе возврата
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryReturnPlaces(): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryReturnPlaces($this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получить информацию о сроках доставки
+     * @param \OzonRocketSDK\Entity\Request\DeliveryTime $data
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Exception
+     */
+    public function deliveryTime(\OzonRocketSDK\Entity\Request\DeliveryTime $data): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryTime($data, $this->guzzleAdapter))->request();
+    }
+
+    /**
+     * Получить список складов пикапа
+     * @return array
+     * @throws \Exception
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function deliveryPickupPlaces(): array
+    {
+        $this->configureRequest(__FUNCTION__);
+        return (new DeliveryPickupPlaces($this->guzzleAdapter))->request();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /**
      * Метод возвращает полный список всех тарифов в системе OZON
      * @return array
-     * @throws GuzzleException
+     * @throws \Exception
      */
-    public function getTariffList(): array
+    public function tariffList(): array
     {
-        $response = $this->apiRequest('GET', $this->map->getMap('tariffList'), []);
-        $resp = [];
-        foreach ($response['items'] as $key => $value) {
-            $resp[] = new TariffList($value);
-        }
-
-        return $resp;
+        $this->configureRequest(__FUNCTION__);
+        return (new TariffList($this->guzzleAdapter))->request();
     }
+
+
+
 
 
 
