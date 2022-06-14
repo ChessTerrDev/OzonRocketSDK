@@ -2,3 +2,4 @@
 /.idea
 /composer.lock
 /examples/main.php
+/.phpunit.result.cache
