@@ -23,7 +23,7 @@ class TokenGenerate extends AbstractMethod
 
     public function __construct($account, $secure, $gizzleAdapter)
     {
-        if ($this->getTokenFromSession()) return $this;
+        if (\OzonRocketSDK\Client\Constants::SAVE_SESSION && $this->getTokenFromSession()) return $this;
 
         if ($account == 'TEST') {
             $param = [

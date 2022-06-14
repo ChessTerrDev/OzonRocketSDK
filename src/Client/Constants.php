@@ -31,7 +31,11 @@ class Constants
      */
     public const AUTH_FAIL = 'Аутентификация не удалась, пожалуйста, проверьте переданные логин и пароль';
 
-
+    /**
+     * Сохранять полчаемый от API - token в сессии
+     * @var bool
+     */
+    public const SAVE_SESSION = true;
 
     /**
      * Статусы EventID
