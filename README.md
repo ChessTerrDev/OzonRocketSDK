@@ -1,6 +1,10 @@
 
+![ozon](https://github.com/ChessTerrDev/OzonRocketSDK/blob/assets/assets/OzonRocketImg.png "Ozon")
 
 # Ozon Logistics ([Ozon:Rocket](https://rocket.ozon.ru/))
+[![Latest Stable Version](http://poser.pugx.org/chessterrdev/ozonrocket-sdk/v)](https://packagist.org/packages/chessterrdev/ozonrocket-sdk)
+[![Total Downloads](http://poser.pugx.org/chessterrdev/ozonrocket-sdk/downloads)](https://packagist.org/packages/chessterrdev/ozonrocket-sdk)
+[![License](http://poser.pugx.org/chessterrdev/ozonrocket-sdk/license)](https://packagist.org/packages/chessterrdev/ozonrocket-sdk)
 > Работа с боевым API возможна только при наличии договора с Ozon
 
 
