@@ -1,5 +1,5 @@
 
-![ozon](https://github.com/ChessTerrDev/OzonRocketSDK/blob/assets/assets/OzonRocketImg.png "Ozon")
+![ozon](https://github.com/ChessTerrDev/OzonRocketSDK/blob/assets/assets/354tfevcterdf534er.jpg "Ozon")
 
 # Ozon Logistics ([Ozon:Rocket](https://rocket.ozon.ru/))
 [![Latest Stable Version](http://poser.pugx.org/chessterrdev/ozonrocket-sdk/v)](https://packagist.org/packages/chessterrdev/ozonrocket-sdk)
