@@ -1,14 +1,12 @@
 <?php
 
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
 require_once '../../vendor/autoload.php';
 
 use OzonRocketSDK\Client\Client;
 
 //-----------------------------------------------------------------------------------------
+if (!session_id()) session_start();
+
 //Тестовая среда
 $account = 'TEST'; // ID для подключения к рабочей
 $secure = null; // Секретный ключ для подключения к рабочей
@@ -78,8 +76,8 @@ $deliveryVariantsByAddressShort = (new \OzonRocketSDK\Entity\Request\DeliveryVar
     ->setAddress('Москва, Большой Власьевский переулок, 12')
     ->setPackages([$package1, $package2]);
 
-$result = $client->deliveryVariantsByAddressShort($deliveryVariantsByAddressShort);
-//var_dump($result);
+$resultDeliveryVariantsByAddressShort = $client->deliveryVariantsByAddressShort($deliveryVariantsByAddressShort);
+//var_dump($resultDeliveryVariantsByAddressShort);
 
 
 //-----------------------------------------------------------------------------------------
@@ -106,5 +104,5 @@ $deliveryVariantsByViewport = (new \OzonRocketSDK\Entity\Request\DeliveryVariant
     ->setPackages([$package1, $package2])
     ->setFilter(new \OzonRocketSDK\Entity\Common\Filter(true, true, true));
 
-$result = $client->deliveryVariantsByViewport($deliveryVariantsByViewport);
-var_dump($result);
+$resultDeliveryVariantsByViewport = $client->deliveryVariantsByViewport($deliveryVariantsByViewport);
+var_dump($resultDeliveryVariantsByViewport);

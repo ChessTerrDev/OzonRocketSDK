@@ -38,6 +38,7 @@ class TokenGenerate extends AbstractMethod
                 Constants::AUTH_KEY_SECRET => $secure,
             ];
         }
+
         parent::__construct($param, $gizzleAdapter);
 
         $token_info = $this->request();
@@ -58,12 +59,12 @@ class TokenGenerate extends AbstractMethod
      */
     private function saveTokenToSession(): void
     {
-        if (!session_id()) session_start();
-        $_SESSION['ozonAuth'] = [
-            'expires_in' => $this->expire, // здесь будет сохранено время до исчерпания срока действия токэна
-            'access_token' => $this->token, // здесь будет сохранен токэн
-            'account_type' => $this->account_type, // здесь будет тип среды
-        ];
+        if (session_id())
+            $_SESSION['ozonAuth'] = [
+                'expires_in' => $this->expire, // здесь будет сохранено время до исчерпания срока действия токэна
+                'access_token' => $this->token, // здесь будет сохранен токэн
+                'account_type' => $this->account_type, // здесь будет тип среды
+            ];
     }
 
     private function getTokenFromSession()
@@ -97,7 +98,6 @@ class TokenGenerate extends AbstractMethod
     private function setToken(string $token)
     {
         $this->token = $token;
-        echo "\n токен получен из сессии \n";
         return $this;
     }
 

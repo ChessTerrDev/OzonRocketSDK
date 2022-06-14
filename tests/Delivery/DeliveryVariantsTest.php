@@ -1,6 +1,6 @@
 <?php
 
-require_once '../../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
 
@@ -207,5 +207,25 @@ class DeliveryVariantsTest extends TestCase
         $this->assertArrayHasKey('isPartialPrepaymentForbidden', $result['data'][0]);
         $this->assertArrayHasKey('isGeozoneAvailable', $result['data'][0]);
         $this->assertArrayHasKey('postalCode', $result['data'][0]);
+    }
+
+
+
+
+
+    public function testDeliveryVariantsException()
+    {
+        $this->expectExceptionMessage('ValidationError');
+
+        $client = (new \OzonRocketSDK\Client\Client('TEST'));
+
+        $deliveryVariants = (new \OzonRocketSDK\Entity\Request\DeliveryVariants())
+            //->setCityName('')
+            ->setPaginationSize(1)
+            ->setPaginationToken('')
+            ->setPayloadIncludesIncludePostalCode(true)
+            ->setPayloadIncludesIncludeWorkingHours(true);
+
+        $client->deliveryVariants($deliveryVariants);
     }
 }

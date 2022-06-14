@@ -63,7 +63,7 @@ final class Client
         $this->guzzleAdapter = new GuzzleAdapter($timeout);
 
         // Авторизуемся / получаем Token
-        $this->tokenGenerate($account, $secure);//(new Autorization($account, $secure, $timeout))->getToken();
+        $this->tokenGenerate($account, $secure);
         if (empty($this->token))
             throw new InvalidArgumentException('Не передан API-токен!');
 
@@ -202,11 +202,11 @@ final class Client
     /**
      * Рассчитать стоимости доставки
      * @param \OzonRocketSDK\Entity\Request\DeliveryCalculate $deliveryCalculate
-     * @return false|mixed
+     * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
      * @throws \Exception
      */
-    public function deliveryCalculate(\OzonRocketSDK\Entity\Request\DeliveryCalculate $deliveryCalculate): float
+    public function deliveryCalculate(\OzonRocketSDK\Entity\Request\DeliveryCalculate $deliveryCalculate): array
     {
         $this->configureRequest(__FUNCTION__);
         return (new DeliveryCalculate($deliveryCalculate, $this->guzzleAdapter))->request();
